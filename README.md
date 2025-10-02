@@ -56,4 +56,37 @@ flask-media-backend/
 ---
 ## ⚙️ Installation
 
+### 1. Clone Repository:
+
+```bash
+git clone https://github.com/preet-99/Voxify-Backend.git
+cd Voxify-Backend
+```
+
+### 2. Create Virtual Environment:
+
+```bash
+python -m venv venv
+source venv/bin/activate  # Mac/Linux
+venv\Scripts\activate     # Windows
+```
+
+### 3. Install Dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+### 4. Other Dependencies:
+
+- For Windows:
+   - Install Tesseract OCR
+   - Set path
+   - pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+
+- For Linus/Mac:
+  - sudo apt install tesseract-ocr
+
+
+
+
 
