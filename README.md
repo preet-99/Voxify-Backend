@@ -5,9 +5,9 @@
 
 - Text-to-Speech (gTTS)
 
-- Image से Text Extraction (OCR via Tesseract) Speech
+- Image to Text Extraction (OCR via Tesseract) Speech
 
-- Video Trimming और Audio Extraction
+- Video Trimming or Audio Extraction
 
 - Text File to Speech
 
@@ -56,35 +56,43 @@ flask-media-backend/
 ---
 ## ⚙️ Installation
 
-### 1. Clone Repository:
+### 1. Clone Repository :
 
 ```bash
 git clone https://github.com/preet-99/Voxify-Backend.git
 cd Voxify-Backend
 ```
 
-### 2. Create Virtual Environment:
+### 2. Create Virtual Environment :
 
 ```bash
 python -m venv venv
-source venv/bin/activate  # Mac/Linux
-venv\Scripts\activate     # Windows
+```
+#### For windows :
+```bash
+venv\Scripts\activate
+```
+#### For Mac/Linux:
+```bash
+ source venv/bin/activate  
 ```
 
-### 3. Install Dependencies:
+### 3. Install Dependencies :
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. Other Dependencies:
+### 4. Other Dependencies :
 
-- For Windows:
+#### For Windows :
    - Install Tesseract OCR
    - Set path
    - pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
-- For Linus/Mac:
-  - sudo apt install tesseract-ocr
+#### For Linus/Mac :
+```bash
+    sudo apt install tesseract-ocr
+```  
 
 
 
