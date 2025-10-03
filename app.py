@@ -1,8 +1,8 @@
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import whisper  # For local Whisper model
-# from moviepy.editor import VideoFileClip
-# import openai # For Api use
+import moviepy as mp
+import tempfile
 from gtts.lang import tts_langs
 from langdetect import detect, LangDetectException
 import subprocess
@@ -18,9 +18,9 @@ pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tessera
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}})
 app.config["MAX_CONTENT_LENGTH"] = 100 * 1024 * 1024 
-
+   
 # Load local Whisper model
-# model = whisper.load_model("large-v2")
+model = whisper.load_model("large-v2")
 
 #  OpenAI Whisper API,
 # openai.api_key = os.getenv("OPENAI_API_KEY")  # Or hardcoded: "your-api-key-here"
@@ -31,85 +31,66 @@ def home():
     info = {"name": "preet", "age": "20", "profession": "Coder"}
     return jsonify(info)
 
-
 # Audio to text
-# @app.route("/audio_to_text", methods=["POST"])
-# def transcribe_audio():
-#     if "audio" not in request.files:
-#         return jsonify({"error": "No audio file part in the request"}), 400
+@app.route("/audio_to_text", methods=["POST"])
+def transcribe_audio():
+    if "audio" not in request.files:
+        return jsonify({"error": "No audio file part in the request"}), 400
 
-#     audio_file = request.files["audio"]
-#     if audio_file.filename == "":
-#         return jsonify({"error": "No selected file"}), 400
+    audio_file = request.files["audio"]
+    if audio_file.filename == "":
+        return jsonify({"error": "No selected file"}), 400
 
-#     try:
-#         # Default: Use local Whisper large-v2 model
-#         result = model.transcribe(audio_file, language="hi", task="translate")
-#         transcribed_text = result["text"]
+    try:
+        # Save to temporary file
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_audio:
+            audio_file.save(temp_audio.name)
+            temp_path = temp_audio.name
 
-#         # Alternative: Use OpenAI Whisper API (commented for now)
-#         # audio_file.seek(0)  # Reset file pointer if needed
-#         # response = openai.Audio.transcribe(
-#         #     model="whisper-1",
-#         #     file=audio_file,
-#         #     language="hi",
-#         #     prompt="Translate to English if needed"
-#         # )
-#         # transcribed_text = response["text"]
+        # Transcribe
+        result = model.transcribe(temp_path, language="hi", task="translate")
+        transcribed_text = result["text"]
 
-#         return jsonify({"text": transcribed_text})
-#     except Exception as e:
-#         return jsonify({"error": str(e)}), 500
+        # Clean up
+        os.remove(temp_path)
+
+        return jsonify({"text": transcribed_text})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 # Video to text
-# @app.route("/video_to_text", methods=["POST"])
-# def transcribe_video():
-#     if "video" not in request.files:
-#         return jsonify({"error": "No video file part in the request"}), 400
+@app.route("/video_to_text", methods=["POST"])
+def transcribe_video():
+    if "video" not in request.files:
+        return jsonify({"error": "No video file part in the request"}), 400
 
-#     video_file = request.files["video"]
-#     if video_file.filename == "":
-#         return jsonify({"error": "No selected file"}), 400
+    video_file = request.files["video"]
+    if video_file.filename == "":
+        return jsonify({"error": "No selected file"}), 400
 
-# try:
-#     # Step 1: Save the uploaded video file to a temporary location
-#     with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_video:
-#         video_file.save(temp_video.name)
-#         temp_video_path = temp_video.name
+    try:
+        # Save to temporary file
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_video:
+            video_file.save(temp_video.name)
+            video_path = temp_video.name
 
-#     # Step 2: Convert video to audio and save it temporarily
-#     audio = AudioSegment.from_file(temp_video_path, format="mp4")
-#     with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as temp_audio:
-#         # Note: The OpenAI API prefers formats like MP3, M4A, etc. for better compression
-#         audio.export(temp_audio.name, format="mp3")
-#         temp_audio_path = temp_audio.name
+        # Extract audio
+        video = mp.VideoFileClip(video_path)
+        audio_path = video_path.replace(".mp4", ".wav")
+        video.audio.write_audiofile(audio_path)
+        video.close()
 
-#     # Initialize transcription result
-#     transcribed_text = ""
+        # Transcribe
+        result = model.transcribe(audio_path, language="hi", task="translate")
+        transcribed_text = result["text"]
 
-# result = local_model.transcribe(temp_audio_path, language="hi", task="translate")
-# transcribed_text = result["text"]
+        # Clean up
+        os.remove(video_path)
+        os.remove(audio_path)
 
-# Option B: Use the OpenAI Whisper API
-# This is ideal for production and handles large files efficiently
-# with open(temp_audio_path, "rb") as audio_file:
-#     response = openai.audio.transcriptions.create(
-#         model="whisper-1",
-#         file=audio_file,
-#         response_format="json",
-#         language="hi",
-#         prompt="Translate to English if needed"
-#     )
-#     transcribed_text = response.text
-
-# Step 4: Clean up temporary files
-#     os.remove(temp_video_path)
-#     os.remove(temp_audio_path)
-
-#     return jsonify({"text": transcribed_text})
-
-# except Exception as e:
-#     return jsonify({"error": str(e)}), 500
+        return jsonify({"text": transcribed_text})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 # Image to speech
@@ -227,41 +208,50 @@ def trim_video():
     start_time = request.form.get("start_time")
     end_time = request.form.get("end_time")
 
-    if not start_time or not end_time:
-        return "Start time and end time are required", 400
-
     try:
         start_time = float(start_time)
         end_time = float(end_time)
-        if start_time < 0 or end_time <= start_time:
-            return "Invalid start or end time. Start time must be non-negative, and end time must be greater than start time.", 400
-    except ValueError:
-        return "Start time and end time must be valid numbers.", 400
+    except:
+        return "Start and end time must be valid numbers", 400
 
     try:
-        # Load video using moviepy
-        video = VideoFileClip(file.stream)
+        # Save uploaded video
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_video:
+            file.save(temp_video.name)
+            temp_video_path = temp_video.name
+
+        # Load video
+        video = mp.VideoFileClip(temp_video_path)
         if end_time > video.duration:
             video.close()
-            return f"End time ({end_time}s) exceeds video duration ({video.duration}s).", 400
+            os.remove(temp_video_path)
+            return f"End time exceeds video duration ({video.duration:.2f}s).", 400
 
-        # Trim the video
-        trimmed_video = video.subclip(start_time, end_time)
+        # Trim
+        trimmed = video.subclipped(start_time, end_time) 
 
-        # Save trimmed video to BytesIO
-        output_stream = io.BytesIO()
-        trimmed_video.write_videofile(output_stream, codec="libx264", audio_codec="aac", temp_audiofile="temp-audio.m4a", remove_temp=True, format="mp4")
-        output_stream.seek(0)
+        # Save to output file
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as output_file:
+            output_path = output_file.name
+        trimmed.write_videofile(output_path, codec="libx264", audio_codec="aac", logger=None)
 
-        # Clean up
+        # Read into memory
+        with open(output_path, "rb") as f:
+            video_bytes = f.read()
+
+        # Cleanup
         video.close()
-        trimmed_video.close()
+        trimmed.close()
+        os.remove(temp_video_path)
+        os.remove(output_path)
 
         return send_file(
-            output_stream,
+            io.BytesIO(video_bytes),
             mimetype="video/mp4",
+            as_attachment=True,
             download_name="trimmed_video.mp4"
         )
+
     except Exception as e:
         return f"Error trimming video: {e}", 500
     
