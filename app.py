@@ -22,10 +22,12 @@ app.config["MAX_CONTENT_LENGTH"] = 100 * 1024 * 1024
 # Load local Whisper model
 model = whisper.load_model("large-v2")
 
+
+
 #  OpenAI Whisper API,
-# openai.api_key = os.getenv("OPENAI_API_KEY")  # Or hardcoded: "your-api-key-here"
+# openai.api_key = os.getenv("OPENAI_API_KEY")  
 
-
+# Route 
 @app.route("/", methods=["GET"])
 def home():
     info = {"name": "preet", "age": "20", "profession": "Coder"}
@@ -352,6 +354,7 @@ def text_to_speech():
         )
     except Exception as e:
         return jsonify({"error": f"TTS failed: {str(e)}"}), 500
+
 
 
 if __name__ == "__main__":

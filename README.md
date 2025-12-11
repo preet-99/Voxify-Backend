@@ -51,7 +51,6 @@ flask-media-backend/
 # 👨‍💻 Authors
 
 - @preet-99 - Preet Vishwakarma
-- @harshit2525 - Harshit Aggarwal
 
 ---
 ## ⚙️ Installation
